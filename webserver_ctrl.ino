@@ -1,6 +1,6 @@
 
 String temp_page(String body, bool back = true) {
-  String html = "<!DOCTYPE HTML> <head> <meta http-equiv='content-type' content='text/html'; charset='UTF-8'> <meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'> <style> div, input { padding: 5px 5px 5px 5px; background: #ffffff; } input,select { width: 96%; height: 40px; margin: 8px 0; display: inline-block; border: 1px solid #ccc; border-radius: 4px; font-size: 15px } select { width: 100%;} button:hover, input[type=submit]:hover { background-color: #d17824; } h1 { text-align: center; } body { text-align: center; font-family: verdana; background: #f78d23b5; font-size: 14px; } input[type=submit],input[type=button],input[type=reset], button { height: 50px; border: 0; border-radius: 0.3rem; background-color: #f78d23b5; color: #ffffff; line-height: 2.4rem; font-size: 1.2rem; width: 100%; cursor: pointer; margin: 8px 0; } .panel { background: #fff; max-height: auto; width: 280px; margin: 75px auto; padding: 30px; border-radius: 8px; text-align:left; display:inline-block; } </style> </head> <body> <div class='panel'>";
+  String html = "<!DOCTYPE HTML> <head> <meta http-equiv='content-type' content='text/html'; charset='UTF-8'> <meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'> <style> div, input { padding: 5px 5px 5px 5px; background: #ffffff; } input,select { width: 96%; height: 40px; margin: 8px 0; display: inline-block; border: 1px solid #ccc; border-radius: 4px; font-size: 15px } select { width: 100%;} button:hover, input[type=submit]:hover { background-color: #3d85c6; } h1 { text-align: center; } body { text-align: center; font-family: verdana; background: #34b1eb; font-size: 14px; } input[type=submit],input[type=button],input[type=reset], button { height: 50px; border: 0; border-radius: 0.3rem; background-color: #34b1eb; color: #ffffff; line-height: 2.4rem; font-size: 1.2rem; width: 100%; cursor: pointer; margin: 8px 0; } .panel { background: #fff; max-height: auto; width: 280px; margin: 75px auto; padding: 30px; border-radius: 8px; text-align:left; display:inline-block; } </style> </head> <body> <div class='panel'>";
   html += body;
   if (back == true) {
     html += "<form action='/' method='get'><button>Back</button></form>";
@@ -18,9 +18,12 @@ void handleWifi() {
   webServer.send(200, "text/html",  temp_page(wifi_panel));
 };
 
-void handleClear() {
-  clear_wifi_eeprom();
-  webServer.send(200, "text/html", content);
+void handleReset() {
+  clear_wifi_eeprom();  
+  ESP.reset();
+}
+
+void handleReboot() {  
   ESP.reset();
 }
 
@@ -39,6 +42,11 @@ void handleSetting() {
   }
   webServer.sendHeader("Access-Control-Allow-Origin", "*");
   webServer.send(statusCode, "application/json", content);
+}
+
+void handleSystem() {
+  String system_panel = "<script>function myconfirmation(mode) {if (mode == 1){var ans = confirm('Are you sure about rebooting ?');if (ans){console.log('going to reboot');window.location.href = '/reboot';return false;}}else if (mode == 0){var ans = confirm('Are you sure about reseting all configurations ?');if (ans == true){window.location.href = '/reset';return false;}}}</script><h1>System </h1><button onclick='return myconfirmation(1)'>Reboot</button><button onclick='return myconfirmation(0)'>Reset</button>";
+  webServer.send(200, "text/html", temp_page(system_panel, true));
 }
 
 void handleAbout() {
@@ -61,9 +69,11 @@ void createWebServer()
   //  dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
   dnsServer.start(DNS_PORT, "*", apIP);
   webServer.on("/", HTTP_GET, handleRoot);
+  webServer.on("/system", HTTP_GET, handleSystem);
   webServer.on("/about", HTTP_GET, handleAbout);
-  webServer.on("/wifi", HTTP_GET, handleWifi);
-  webServer.on("/clear", HTTP_POST, handleClear);
+  webServer.on("/wifi", HTTP_GET, handleWifi);  
+  webServer.on("/reboot", HTTP_GET, handleReboot);
+  webServer.on("/reset", HTTP_GET, handleReset);
   webServer.on("/wifi_config", HTTP_POST, handleSetting);
   webServer.onNotFound(handleNotFound);
   webServer.begin();
